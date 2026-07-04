@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-spiritual bg-[#FAF6F0] text-gray-900 transition-colors duration-300;
+  }
+
+  body.dark {
+    @apply bg-slate-950 text-slate-100;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-amber-50;
+}
+body.dark ::-webkit-scrollbar-track {
+  @apply bg-slate-900;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-saffron-500 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-saffron-600;
+}
+
+/* Theme Gradients */
+.bg-spiritual-gradient {
+  background: linear-gradient(135deg, #7f1d1d 0%, #d97706 100%);
+}
+
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #b45309 0%, #fbbf24 100%);
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+}
+.dark .glass-panel {
+  @apply bg-slate-900/80 backdrop-blur-md border border-slate-800/40 shadow-xl;
+}
+
+/* Micro-animations */
+.hover-lift {
+  @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl;
+}
