@@ -42,9 +42,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
       try {
-        // Request token refresh — relative URL goes through Vite proxy
+        // Request token refresh
         const refreshRes = await axios.post(
-          '/api/v1/auth/refresh-token',
+          `${API_BASE_URL}/auth/refresh-token`,
           {},
           { withCredentials: true }
         );
