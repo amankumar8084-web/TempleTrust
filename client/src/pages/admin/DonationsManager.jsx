@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminSidebar from '../../components/layout/AdminSidebar.jsx';
 import { Download, Search } from 'lucide-react';
-import api from '../../services/api.js';
+import api, { API_BASE_URL } from '../../services/api.js';
 import Skeleton from '../../components/common/Skeleton.jsx';
 
 const DonationsManager = () => {
@@ -36,7 +36,7 @@ const DonationsManager = () => {
             <p className="text-sm text-gray-500 dark:text-slate-400">View and manage all donation records</p>
           </div>
           <div className="flex gap-3">
-            <a href="http://localhost:5000/api/v1/donations/export" target="_blank" rel="noreferrer"
+            <a href={`${API_BASE_URL}/donations/export`} target="_blank" rel="noreferrer"
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl">
               <Download className="h-3.5 w-3.5" /> Export Excel
             </a>

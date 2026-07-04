@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { Heart, CalendarClock, CalendarRange, Award, Bell, User, TrendingUp, Settings, Edit2, Mail, Phone, Calendar } from 'lucide-react';
-import api from '../services/api.js';
+import api, { API_BASE_URL } from '../services/api.js';
 import Skeleton from '../components/common/Skeleton.jsx';
 import ProfilePictureManager from '../components/profile/ProfilePictureManager.jsx';
 import ProfileEditModal from '../components/profile/ProfileEditModal.jsx';
@@ -67,7 +67,7 @@ const UserDashboard = () => {
           <div className="text-center md:text-left space-y-1">
             <div className="flex flex-col md:flex-row items-center gap-2 md:gap-3">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Welcome, {user?.name?.split(' ')[0]}! 🙏</h1>
-              <button 
+              <button
                 onClick={() => setIsEditModalOpen(true)}
                 className="p-1.5 bg-amber-50 hover:bg-amber-100 dark:bg-slate-850 dark:hover:bg-slate-800 text-saffron-700 dark:text-amber-400 rounded-lg hover:scale-105 active:scale-95 transition-all"
                 title="Edit Details"
@@ -107,11 +107,10 @@ const UserDashboard = () => {
         <div className="flex flex-wrap gap-2">
           {SECTIONS.map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => setActiveSection(id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition border ${
-                activeSection === id
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition border ${activeSection === id
                   ? 'bg-saffron-600 text-white border-saffron-600'
                   : 'bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800 text-gray-600 dark:text-slate-300 hover:border-amber-300'
-              }`}
+                }`}
             >
               <Icon className="h-3.5 w-3.5" />
               {label}
@@ -197,7 +196,7 @@ const UserDashboard = () => {
                           </div>
                           <div className="text-right">
                             <p className="text-lg font-extrabold text-saffron-700">₹{d.amount}</p>
-                            <a href={`http://localhost:5000/api/v1/donations/receipt/${d._id}/file`} target="_blank" rel="noreferrer"
+                            <a href={`${API_BASE_URL}/donations/receipt/${d._id}/file`} target="_blank" rel="noreferrer"
                               className="text-[10px] text-blue-500 hover:underline">Download Receipt</a>
                           </div>
                         </div>
@@ -227,12 +226,10 @@ const UserDashboard = () => {
                             </p>
                           </div>
                           <div className="flex gap-3 items-center">
-                            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg capitalize ${
-                              b.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                            }`}>{b.paymentStatus}</span>
-                            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg capitalize ${
-                              b.bookingStatus === 'confirmed' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
-                            }`}>{b.bookingStatus}</span>
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg capitalize ${b.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                              }`}>{b.paymentStatus}</span>
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-lg capitalize ${b.bookingStatus === 'confirmed' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
+                              }`}>{b.bookingStatus}</span>
                             <span className="text-sm font-bold text-saffron-700">₹{b.amountPaid}</span>
                           </div>
                         </div>
@@ -259,9 +256,8 @@ const UserDashboard = () => {
                             <p className="text-sm font-bold text-gray-800 dark:text-white">{reg.eventId?.title}</p>
                             <p className="text-[10px] text-gray-400">{reg.eventId?.date ? new Date(reg.eventId.date).toLocaleDateString() : 'N/A'} &bull; {reg.eventId?.venue}</p>
                           </div>
-                          <span className={`text-xs font-bold px-2.5 py-1 rounded-lg self-start ${
-                            reg.status === 'registered' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                          }`}>{reg.status}</span>
+                          <span className={`text-xs font-bold px-2.5 py-1 rounded-lg self-start ${reg.status === 'registered' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                            }`}>{reg.status}</span>
                         </div>
                       ))}
                     </div>
@@ -332,12 +328,12 @@ const UserDashboard = () => {
                     <h2 className="text-lg font-bold text-gray-800 dark:text-white">Profile Management</h2>
                     <p className="text-xs text-gray-500 dark:text-slate-400">Update your avatar, name, and contact details below.</p>
                   </div>
-                  
+
                   <div className="flex flex-col md:flex-row gap-8 items-center md:items-start p-6 bg-amber-50/40 dark:bg-slate-800/40 rounded-3xl border border-amber-100/50 dark:border-slate-800">
                     <div className="flex-shrink-0">
                       <ProfilePictureManager currentUser={user} />
                     </div>
-                    
+
                     <div className="flex-1 space-y-4 w-full">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-850 shadow-sm flex items-center gap-3">
@@ -390,10 +386,10 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      <ProfileEditModal 
-        isOpen={isEditModalOpen} 
-        onClose={() => setIsEditModalOpen(false)} 
-        currentUser={user} 
+      <ProfileEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        currentUser={user}
       />
     </div>
   );

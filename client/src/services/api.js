@@ -2,9 +2,11 @@ import axios from 'axios';
 import { store } from '../store/index.js';
 import { logoutSuccess } from '../features/auth/authSlice.js';
 
-// Use relative URL so Vite proxy forwards /api/v1/* → http://localhost:5000/api/v1/*
+// Use environment variable if provided, otherwise default to relative URL (which uses Vite proxy)
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: API_BASE_URL,
   withCredentials: true, // enables sending cookies like refreshToken
   headers: {
     'Content-Type': 'application/json'

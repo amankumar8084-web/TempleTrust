@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import AdminSidebar from '../../components/layout/AdminSidebar.jsx';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { Heart, CalendarClock, Users, ShieldCheck, Award, TrendingUp, Bell, Mail } from 'lucide-react';
-import api from '../../services/api.js';
+import api, { API_BASE_URL } from '../../services/api.js';
 import Skeleton from '../../components/common/Skeleton.jsx';
 
 const PIE_COLORS = ['#d97706', '#b45309', '#92400e', '#78350f', '#fbbf24', '#fcd34d'];
@@ -132,7 +132,7 @@ const AdminDashboard = () => {
               { label: '+ Create Event', path: '/admin/events', bg: 'bg-saffron-600 hover:bg-saffron-700' },
               { label: '+ Add Announcement', path: '/admin/announcements', bg: 'bg-maroon-700 hover:bg-maroon-800' },
               { label: '+ Upload Gallery', path: '/admin/gallery', bg: 'bg-amber-600 hover:bg-amber-700' },
-              { label: 'Export Donations', path: `http://localhost:5000/api/v1/donations/export`, bg: 'bg-emerald-600 hover:bg-emerald-700', ext: true },
+              { label: 'Export Donations', path: `${API_BASE_URL}/donations/export`, bg: 'bg-emerald-600 hover:bg-emerald-700', ext: true },
               { label: 'Update Temple CMS', path: '/admin/content', bg: 'bg-slate-700 hover:bg-slate-800' },
             ].map(({ label, path, bg, ext }) =>
               ext ? (
