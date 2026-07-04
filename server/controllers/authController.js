@@ -7,11 +7,11 @@ import { sendEmail } from '../services/emailService.js';
 import { logger } from '../config/db.js';
 import { BadRequestError, UnauthorizedError, NotFoundError } from '../utils/customErrors.js';
 
-// Cookie options
+// Cookie options (Must be sameSite: 'none' and secure: true for cross-origin backend/frontend deployments)
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
 
@@ -176,15 +176,15 @@ export const sendOTP = async (req, res, next) => {
       // Create user if not exists (auto-signup via OTP)
       const devoteeRole = await Role.findOne({ name: 'Devotee' });
       const tempPassword = Math.random().toString(36).slice(-8);
-        user = await User.create({
-          name: email.split('@')[0],
-          email,
-          phone: '',
-          role: devoteeRole._id,
-          status: 'active',
-          isVerified: false,
-          password: tempPassword
-        });
+      user = await User.create({
+        name: email.split('@')[0],
+        email,
+        phone: '',
+        role: devoteeRole._id,
+        status: 'active',
+        isVerified: false,
+        password: tempPassword
+      });
     }
 
     // Generate 6 digit numeric code
@@ -276,7 +276,7 @@ export const googleLogin = async (req, res, next) => {
     }
 
     let user = await User.findOne({ email }).populate('role');
-    
+
     if (!user) {
       const devoteeRole = await Role.findOne({ name: 'Devotee' });
       user = await User.create({
