@@ -37,12 +37,8 @@ const Navbar = () => {
     { name: t('nav.home'), path: '/' },
     { name: t('nav.about'), path: '/about' },
     { name: t('nav.donations'), path: '/donate' },
-    { name: t('nav.pooja'), path: '/pooja' },
-    { name: t('nav.events'), path: '/events' },
     { name: t('nav.gallery'), path: '/gallery' },
     { name: t('nav.announcements'), path: '/announcements' },
-    { name: t('nav.volunteer'), path: '/volunteer-register' },
-    { name: t('nav.membership'), path: '/membership' },
     { name: t('nav.contact'), path: '/contact' }
   ];
 

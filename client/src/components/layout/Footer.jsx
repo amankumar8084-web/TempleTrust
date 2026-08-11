@@ -5,7 +5,7 @@ const Footer = () => {
   return (
     <footer className="bg-slate-900 text-slate-300 py-12 border-t-4 border-saffron-600 font-spiritual">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
-        
+
         {/* Info */}
         <div className="space-y-4">
           <h3 className="text-2xl font-bold text-white tracking-wide">BrahamBaba</h3>
@@ -25,8 +25,6 @@ const Footer = () => {
           <ul className="space-y-2 text-sm">
             <li><Link to="/about" className="hover:text-amber-400 transition">About the Temple</Link></li>
             <li><Link to="/donate" className="hover:text-amber-400 transition">Online Donations</Link></li>
-            <li><Link to="/pooja" className="hover:text-amber-400 transition">Book a Pooja Slot</Link></li>
-            <li><Link to="/events" className="hover:text-amber-400 transition">Upcoming Festivals</Link></li>
             <li><Link to="/gallery" className="hover:text-amber-400 transition">Photo Gallery</Link></li>
           </ul>
         </div>
@@ -37,8 +35,6 @@ const Footer = () => {
             Get Involved
           </h4>
           <ul className="space-y-2 text-sm">
-            <li><Link to="/volunteer-register" className="hover:text-amber-400 transition">Register as Volunteer</Link></li>
-            <li><Link to="/membership" className="hover:text-amber-400 transition">Join Membership Plan</Link></li>
             <li><Link to="/announcements" className="hover:text-amber-400 transition">Notice Board Alerts</Link></li>
             <li><Link to="/contact" className="hover:text-amber-400 transition">Help & FAQs</Link></li>
           </ul>
@@ -62,7 +58,7 @@ const Footer = () => {
         </div>
 
       </div>
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-6 border-t border-slate-800 text-center text-xs text-slate-500">
         &copy; {new Date().getFullYear()} BrahamBaba Devotee Trust. All Rights Reserved. Designed for maximum spiritual transparency.
       </div>

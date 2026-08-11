@@ -10,12 +10,8 @@ import ChatBot from './components/chat/ChatBot.jsx';
 const Home = lazy(() => import('./pages/Home.jsx'));
 const About = lazy(() => import('./pages/About.jsx'));
 const Donate = lazy(() => import('./pages/Donate.jsx'));
-const PoojaBooking = lazy(() => import('./pages/PoojaBooking.jsx'));
-const Events = lazy(() => import('./pages/Events.jsx'));
 const Gallery = lazy(() => import('./pages/Gallery.jsx'));
 const Announcements = lazy(() => import('./pages/Announcements.jsx'));
-const Membership = lazy(() => import('./pages/Membership.jsx'));
-const VolunteerRegister = lazy(() => import('./pages/VolunteerRegister.jsx'));
 const Contact = lazy(() => import('./pages/Contact.jsx'));
 const Login = lazy(() => import('./pages/Login.jsx'));
 
@@ -72,12 +68,8 @@ const App = () => {
           <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
           <Route path="/about" element={<PublicLayout><About /></PublicLayout>} />
           <Route path="/donate" element={<PublicLayout><Donate /></PublicLayout>} />
-          <Route path="/pooja" element={<PublicLayout><PoojaBooking /></PublicLayout>} />
-          <Route path="/events" element={<PublicLayout><Events /></PublicLayout>} />
           <Route path="/gallery" element={<PublicLayout><Gallery /></PublicLayout>} />
           <Route path="/announcements" element={<PublicLayout><Announcements /></PublicLayout>} />
-          <Route path="/membership" element={<PublicLayout><Membership /></PublicLayout>} />
-          <Route path="/volunteer" element={<PublicLayout><VolunteerRegister /></PublicLayout>} />
           <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
 
           {/* ── User Dashboard ────────────────────────────────────────── */}

@@ -2,8 +2,22 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Phone, User, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { authStart, authSuccess, authFailure } from '../features/auth/authSlice.js';
 import api from '../services/api.js';
+
+const decodeJwt = (token) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    return null;
+  }
+};
 
 const TABS = ['Login', 'Register', 'OTP Login'];
 
@@ -37,6 +51,33 @@ const Login = () => {
       dispatch(authFailure(msg));
       setLocalError(msg);
     }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLocalError('');
+    dispatch(authStart());
+    try {
+      const decodedUser = decodeJwt(credentialResponse.credential);
+      if (!decodedUser) throw new Error("Invalid token from Google");
+
+      const res = await api.post('/auth/google-login', {
+        email: decodedUser.email,
+        name: decodedUser.name,
+        googleId: decodedUser.sub,
+        avatar: decodedUser.picture
+      });
+
+      dispatch(authSuccess({ user: res.data.data, token: res.data.token }));
+      redirectByRole(res.data.data.role);
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Google Login failed.';
+      dispatch(authFailure(msg));
+      setLocalError(msg);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setLocalError('Google Sign-In was unsuccessful. Try again later.');
   };
 
   const handleRegisterSubmit = async (e) => {
@@ -109,8 +150,8 @@ const Login = () => {
             {TABS.map((tab) => (
               <button key={tab} onClick={() => { setActiveTab(tab); setLocalError(''); setOtpSent(false); }}
                 className={`flex-1 py-3.5 text-xs font-bold transition border-b-2 ${activeTab === tab
-                    ? 'border-saffron-600 text-saffron-700 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-950/10'
-                    : 'border-transparent text-gray-500 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300'
+                  ? 'border-saffron-600 text-saffron-700 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-950/10'
+                  : 'border-transparent text-gray-500 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300'
                   }`}
               >{tab}</button>
             ))}
@@ -149,6 +190,21 @@ const Login = () => {
                   className="w-full bg-spiritual-gradient text-white font-bold py-3 rounded-xl shadow-lg hover:scale-105 transition">
                   {loading ? 'Signing In...' : 'Sign In'}
                 </button>
+
+                <div className="relative flex items-center justify-center my-4">
+                  <div className="border-t border-gray-200 dark:border-slate-700 w-full"></div>
+                  <span className="bg-white dark:bg-slate-900 px-3 text-xs text-gray-400 absolute">OR</span>
+                </div>
+
+                <div className="flex justify-center w-full" style={{ minHeight: '40px' }}>
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    theme="outline"
+                    text="continue_with"
+                    shape="pill"
+                  />
+                </div>
                 <p className="text-center text-[10px] text-gray-500">
                   No account?{' '}
                   <button type="button" onClick={() => setActiveTab('Register')} className="text-saffron-600 font-bold hover:underline">
@@ -190,6 +246,21 @@ const Login = () => {
                   className="w-full bg-spiritual-gradient text-white font-bold py-3 rounded-xl shadow-lg hover:scale-105 transition">
                   {loading ? 'Creating Account...' : 'Create Account'}
                 </button>
+
+                <div className="relative flex items-center justify-center my-4">
+                  <div className="border-t border-gray-200 dark:border-slate-700 w-full"></div>
+                  <span className="bg-white dark:bg-slate-900 px-3 text-xs text-gray-400 absolute">OR</span>
+                </div>
+
+                <div className="flex justify-center w-full" style={{ minHeight: '40px' }}>
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleError}
+                    theme="outline"
+                    text="signup_with"
+                    shape="pill"
+                  />
+                </div>
               </form>
             )}
 
