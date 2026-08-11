@@ -12,9 +12,15 @@ import {
   getTempleContent,
   updateTempleContent,
   getRoles,
-  getFinancials
+  getFinancials,
+  uploadDonationImage,
+  removeDonationImage
 } from '../controllers/adminController.js';
 import { protect, restrictTo } from '../middleware/authMiddleware.js';
+import multer from 'multer';
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const router = express.Router();
 
@@ -46,5 +52,9 @@ router.put('/content', protect, restrictTo('Admin', 'Super Admin'), updateTemple
 
 // Financial summary for logged in users
 router.get('/financials', protect, getFinancials);
+
+// Donation dynamic images
+router.post('/donation-images/upload', protect, restrictTo('Admin', 'Super Admin'), upload.single('file'), uploadDonationImage);
+router.post('/donation-images/remove', protect, restrictTo('Admin', 'Super Admin'), removeDonationImage);
 
 export default router;

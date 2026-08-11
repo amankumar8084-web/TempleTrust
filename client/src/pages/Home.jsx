@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Calendar, Heart, ShieldAlert, Award, ArrowRight, Clock } from 'lucide-react';
 import api from '../services/api.js';
 import Skeleton from '../components/common/Skeleton.jsx';
+import heroBg from '../assets/hero_bg.jpg';
 
 const Home = () => {
   const { t } = useTranslation();
@@ -33,12 +34,12 @@ const Home = () => {
     <div className="space-y-16 font-spiritual pb-16">
       {/* 1. Hero Banner Slider / Section */}
       <section className="relative bg-slate-900 text-white min-h-[500px] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1609137144814-7fa2536fae7c?w=1600&auto=format&fit=crop&q=80')] bg-cover bg-center" />
+        <div className="absolute inset-0 opacity-40 bg-cover bg-center" style={{ backgroundImage: `url(${heroBg})` }} />
         <div className="absolute inset-0 bg-gradient-to-r from-maroon-950 via-maroon-900/60 to-transparent" />
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center md:text-left space-y-6">
           <span className="bg-saffron-600 text-white text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full">
-            Jai BrahamBaba
+            JAY BRAHAMBABA
           </span>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight max-w-3xl leading-tight">
             {t('home.welcome')}
@@ -138,9 +139,8 @@ const Home = () => {
                       Pinned
                     </span>
                   )}
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    notice.category === 'Emergency' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                  }`}>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${notice.category === 'Emergency' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                    }`}>
                     {notice.category}
                   </span>
                   <h4 className="font-bold text-lg text-gray-800 dark:text-white mt-3 mb-2">{notice.title}</h4>

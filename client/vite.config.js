@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       // Forward all /api/v1/* requests to Express backend on port 5000
       '/api': {
-        target: 'https://templetrust.onrender.com',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       }

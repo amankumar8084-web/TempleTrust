@@ -50,12 +50,12 @@ const Navbar = () => {
     <nav className="bg-white dark:bg-slate-900 shadow-md sticky top-0 z-40 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          
+
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2">
-              <span className="text-2xl font-bold bg-spiritual-gradient bg-clip-text text-transparent">
-                BrahamBaba
+              <span className="text-2xl font-extrabold text-saffron-600 dark:text-amber-500">
+                ब्रह्मबाबा
               </span>
               <span className="text-[10px] bg-amber-500 text-white font-semibold px-1.5 py-0.5 rounded uppercase tracking-wider hidden sm:inline">
                 Trust
@@ -100,9 +100,8 @@ const Navbar = () => {
                     <button
                       key={lang.code}
                       onClick={() => changeLanguage(lang.code)}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-amber-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 ${
-                        i18n.language === lang.code ? 'font-bold text-saffron-600' : ''
-                      }`}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-amber-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 ${i18n.language === lang.code ? 'font-bold text-saffron-600' : ''
+                        }`}
                     >
                       {lang.label}
                     </button>
@@ -181,18 +180,17 @@ const Navbar = () => {
             </Link>
           ))}
           <hr className="border-gray-100 dark:border-slate-800 my-2" />
-          
+
           {/* Languages in Mobile */}
           <div className="flex flex-wrap gap-2 py-2">
             {['en', 'hi', 'ta', 'te', 'bn'].map((lang) => (
               <button
                 key={lang}
                 onClick={() => changeLanguage(lang)}
-                className={`px-3 py-1 rounded-full text-xs border ${
-                  i18n.language === lang
-                    ? 'bg-saffron-600 text-white border-saffron-600'
-                    : 'border-gray-200 text-gray-700 dark:text-gray-300 dark:border-slate-700'
-                }`}
+                className={`px-3 py-1 rounded-full text-xs border ${i18n.language === lang
+                  ? 'bg-saffron-600 text-white border-saffron-600'
+                  : 'border-gray-200 text-gray-700 dark:text-gray-300 dark:border-slate-700'
+                  }`}
               >
                 {lang.toUpperCase()}
               </button>

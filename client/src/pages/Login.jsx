@@ -234,9 +234,6 @@ const Login = () => {
         <p className="text-center text-[9px] text-slate-400">
           By continuing, you agree to our Terms of Service and Privacy Policy.
         </p>
-        <p className="text-center text-[10px] text-slate-400">
-          <strong>Demo:</strong> amankumar8084227421@gmail.com / superadmin123
-        </p>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ import ContactMessage from '../models/ContactMessage.js';
 import Settings from '../models/Settings.js';
 import TempleInfo from '../models/TempleInfo.js';
 import { BadRequestError, NotFoundError } from '../utils/customErrors.js';
+import { uploadToCloudinary } from '../config/cloudinary.js';
 
 export const getDashboardStats = async (req, res, next) => {
   try {
@@ -38,9 +39,9 @@ export const getDashboardStats = async (req, res, next) => {
       { $group: { _id: null, total: { $sum: '$amountPaid' } } }
     ]);
 
-    const monthlyRevenue = (monthlyDonations[0]?.total || 0) + 
-                            (monthlyBookings[0]?.total || 0) + 
-                            (monthlyMemberships[0]?.total || 0);
+    const monthlyRevenue = (monthlyDonations[0]?.total || 0) +
+      (monthlyBookings[0]?.total || 0) +
+      (monthlyMemberships[0]?.total || 0);
 
     // 3. Devotee Count
     const devoteeRole = await Role.findOne({ name: 'Devotee' });
@@ -300,6 +301,57 @@ export const getFinancials = async (req, res, next) => {
         totalFundsComing: settings.totalFundsComing || 0,
         totalExpenses: settings.totalExpenses || 0
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const uploadDonationImage = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return next(new BadRequestError('No file uploaded.'));
+    }
+    const uploadResult = await uploadToCloudinary(req.file.buffer, 'donations');
+    const imageUrl = uploadResult.secure_url;
+
+    let content = await TempleInfo.findOne();
+    if (!content) {
+      content = new TempleInfo();
+    }
+    if (!content.donationImages) {
+      content.donationImages = [];
+    }
+    content.donationImages.push(imageUrl);
+    await content.save();
+
+    res.status(200).json({
+      status: 'success',
+      data: content.donationImages
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeDonationImage = async (req, res, next) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return next(new BadRequestError('Image URL is required.'));
+    }
+
+    let content = await TempleInfo.findOne();
+    if (!content) {
+      return next(new NotFoundError('Temple content not found.'));
+    }
+
+    content.donationImages = (content.donationImages || []).filter(img => img !== url);
+    await content.save();
+
+    res.status(200).json({
+      status: 'success',
+      data: content.donationImages
     });
   } catch (error) {
     next(error);

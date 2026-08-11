@@ -20,7 +20,7 @@ const resources = {
         login: "Login"
       },
       home: {
-        welcome: "Welcome to BrahamBaba Temple Trust",
+        welcome: "Welcome to BrahamBaba Nirog Dham Foundation",
         subtitle: "Sustaining Vedic spirituality and community charity since 1978.",
         timings: "Daily Temple Timings",
         donateCTA: "Make a Divine Contribution",
@@ -45,7 +45,7 @@ const resources = {
         login: "लॉगिन"
       },
       home: {
-        welcome: "ब्रह्मबाबा मंदिर ट्रस्ट में आपका स्वागत है",
+        welcome: "ब्रह्मबाबा निरोग धाम फाउंडेशन में आपका स्वागत है",
         subtitle: "1978 से वैदिक आध्यात्मिकता और सामुदायिक सेवा का पोषण।",
         timings: "दैनिक मंदिर समय",
         donateCTA: "एक दिव्य योगदान दें",

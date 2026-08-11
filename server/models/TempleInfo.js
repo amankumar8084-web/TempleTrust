@@ -58,7 +58,11 @@ const templeInfoSchema = new mongoose.Schema({
     default: 'contact@brahambaba.org'
   },
   timings: [timingSchema],
-  trustees: [trusteeSchema]
+  trustees: [trusteeSchema],
+  donationImages: {
+    type: [String],
+    default: []
+  }
 }, { timestamps: true });
 
 const TempleInfo = mongoose.model('TempleInfo', templeInfoSchema);
