@@ -3,67 +3,65 @@ import AdminPageLayout from '../../components/layout/AdminPageLayout.jsx';
 import { Save, Trash2, UploadCloud } from 'lucide-react';
 import api from '../../services/api.js';
 import Skeleton from '../../components/common/Skeleton.jsx';
+import { useTempleContent } from '../../hooks/queries/useQueries.js';
+import { useUpdateTempleContent, useUploadDonationImage, useRemoveDonationImage } from '../../hooks/queries/useMutations.js';
 
 const ContentManager = () => {
   const [content, setContent] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState({ text: '', type: '' });
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await api.get('/admin/content');
-        setContent(res.data.data);
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
-    };
-    fetch();
-  }, []);
+  const { data: templeContent, isLoading: loading } = useTempleContent();
+  const updateMutation = useUpdateTempleContent();
+  const uploadImageMutation = useUploadDonationImage();
+  const removeImageMutation = useRemoveDonationImage();
 
-  const handleSave = async () => {
-    setSaving(true);
+  const saving = updateMutation.isPending;
+  const uploading = uploadImageMutation.isPending;
+
+  useEffect(() => {
+    if (templeContent) {
+      setContent(templeContent);
+    }
+  }, [templeContent]);
+
+  const handleSave = () => {
     setMsg({ text: '', type: '' });
-    try {
-      await api.put('/admin/content', content);
-      setMsg({ text: 'Temple information saved successfully!', type: 'success' });
-    } catch (err) {
-      setMsg({ text: err.response?.data?.message || 'Error saving content.', type: 'error' });
-    } finally { setSaving(false); }
+    updateMutation.mutate(content, {
+      onSuccess: () => setMsg({ text: 'Temple information saved successfully!', type: 'success' }),
+      onError: (err) => setMsg({ text: err.response?.data?.message || 'Error saving content.', type: 'error' })
+    });
   };
 
-  const handleUploadImage = async (e) => {
+  const handleUploadImage = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const formData = new FormData();
     formData.append('file', file);
-    setUploading(true);
     setMsg({ text: '', type: '' });
-    try {
-      const res = await api.post('/admin/donation-images/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setContent({ ...content, donationImages: res.data.data });
-      setMsg({ text: 'Donation image uploaded successfully.', type: 'success' });
-    } catch (err) {
-      setMsg({ text: err.response?.data?.message || 'Error uploading image.', type: 'error' });
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
+
+    uploadImageMutation.mutate(formData, {
+      onSuccess: (res) => {
+        setContent({ ...content, donationImages: res.data.data });
+        setMsg({ text: 'Donation image uploaded successfully.', type: 'success' });
+        e.target.value = '';
+      },
+      onError: (err) => {
+        setMsg({ text: err.response?.data?.message || 'Error uploading image.', type: 'error' });
+        e.target.value = '';
+      }
+    });
   };
 
-  const handleRemoveImage = async (url) => {
+  const handleRemoveImage = (url) => {
     if (!window.confirm('Remove this donation image?')) return;
     setMsg({ text: '', type: '' });
-    try {
-      const res = await api.post('/admin/donation-images/remove', { url });
-      setContent({ ...content, donationImages: res.data.data });
-      setMsg({ text: 'Donation image removed.', type: 'success' });
-    } catch (err) {
-      setMsg({ text: err.response?.data?.message || 'Error removing image.', type: 'error' });
-    }
+    removeImageMutation.mutate(url, {
+      onSuccess: (res) => {
+        setContent({ ...content, donationImages: res.data.data });
+        setMsg({ text: 'Donation image removed.', type: 'success' });
+      },
+      onError: (err) => setMsg({ text: err.response?.data?.message || 'Error removing image.', type: 'error' })
+    });
   };
 
   const FIELDS = [

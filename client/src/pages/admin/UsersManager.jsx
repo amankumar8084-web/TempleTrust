@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AdminPageLayout from '../../components/layout/AdminPageLayout.jsx';
 import { Users, Search } from 'lucide-react';
-import api from '../../services/api.js';
 import Skeleton from '../../components/common/Skeleton.jsx';
+import { useUsers } from '../../hooks/queries/useQueries.js';
+import { useUpdateUserRole } from '../../hooks/queries/useMutations.js';
 
 const ROLES = ['Devotee', 'Staff', 'Volunteer', 'Trustee', 'Admin'];
 
@@ -17,26 +18,16 @@ const roleBadge = (role) => {
 };
 
 const UsersManager = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await api.get('/admin/users');
-        setUsers(res.data.data || []);
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
-    };
-    fetch();
-  }, []);
+  const { data: users = [], isLoading: loading } = useUsers();
+  const updateRoleMutation = useUpdateUserRole();
 
-  const handleRoleChange = async (id, role) => {
-    try {
-      await api.put(`/admin/users/${id}/role`, { role });
-      setUsers(prev => prev.map(u => u._id === id ? { ...u, role } : u));
-    } catch (err) { alert(err.response?.data?.message || 'Error updating role.'); }
+  const handleRoleChange = (id, role) => {
+    updateRoleMutation.mutate(
+      { id, role },
+      { onError: (err) => alert(err.response?.data?.message || 'Error updating role.') }
+    );
   };
 
   const filtered = users.filter(u =>

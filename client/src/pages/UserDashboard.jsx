@@ -2,64 +2,44 @@ import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { User, TrendingUp, Settings, Edit2, Mail, Phone, Calendar, Shield, Clock, ImageIcon, Bell, Download, ChevronLeft, ChevronRight, IndianRupee } from 'lucide-react';
-import api, { API_BASE_URL } from '../services/api.js';
+import { API_BASE_URL } from '../services/api.js';
 import Skeleton from '../components/common/Skeleton.jsx';
 import ProfilePictureManager from '../components/profile/ProfilePictureManager.jsx';
 import ProfileEditModal from '../components/profile/ProfileEditModal.jsx';
 import { updateProfileSuccess } from '../features/auth/authSlice.js';
+import { usePublicFinancials, useUserProfile } from '../hooks/queries/useQueries.js';
 
 const UserDashboard = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const [data, setData] = useState({ financials: null, records: [], pagination: null });
-  const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [finPage, setFinPage] = useState(1);
-  const [finLoading, setFinLoading] = useState(false);
+
+  // React Query Hooks
+  const { data: userProfile, isLoading: profileLoading } = useUserProfile(!!user);
+
+  const {
+    data: finData,
+    isLoading: finLoading,
+    isFetching: finFetching
+  } = usePublicFinancials({ page: finPage, limit: 10 });
+
+  const loading = profileLoading || (finLoading && finPage === 1);
+  const data = {
+    financials: finData?.summary || null,
+    records: finData?.records || [],
+    pagination: finData?.pagination || null
+  };
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const [finSumRes, finRecRes, profRes] = await Promise.all([
-          api.get('/financials/public-summary'),
-          api.get(`/financials/public?limit=10&page=${finPage}`),
-          api.get('/users/profile')
-        ]);
-        setData(prev => ({
-          ...prev,
-          financials: finSumRes.data.data,
-          records: finRecRes.data.data,
-          pagination: finRecRes.data.pagination
-        }));
-        if (profRes.data?.data) {
-          dispatch(updateProfileSuccess(profRes.data.data));
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchInitialData();
-  }, [dispatch, finPage]);
-
-  // Separate fetch for pagination clicks so we only reload the table
-  const fetchRecords = async (page) => {
-    setFinLoading(true);
-    try {
-      const res = await api.get(`/financials/public?limit=10&page=${page}`);
-      setData(prev => ({
-        ...prev,
-        records: res.data.data,
-        pagination: res.data.pagination
-      }));
-      setFinPage(page);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setFinLoading(false);
+    if (userProfile) {
+      dispatch(updateProfileSuccess(userProfile));
     }
+  }, [userProfile, dispatch]);
+
+  const fetchRecords = (page) => {
+    setFinPage(page);
   };
 
   const handleExport = () => {
@@ -256,7 +236,7 @@ const UserDashboard = () => {
                   <div className="mt-8">
                     <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3">Recent Transactions (Public View)</h3>
                     <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm relative">
-                      {finLoading && <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] z-10" />}
+                      {finFetching && <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] z-10" />}
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left">
                           <thead className="bg-gray-50 dark:bg-slate-800/50 text-gray-500 dark:text-slate-400 uppercase tracking-wider">

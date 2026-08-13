@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AdminPageLayout from '../../components/layout/AdminPageLayout.jsx';
-import api from '../../services/api.js';
 import Skeleton from '../../components/common/Skeleton.jsx';
+import { useMemberships } from '../../hooks/queries/useQueries.js';
 
 const planColor = (p) => ({
   Lifetime: 'bg-purple-100 text-purple-700',
@@ -14,20 +14,9 @@ const statusColor = (s) => ({
 }[s] || 'bg-gray-100 text-gray-700');
 
 const MembershipsManager = () => {
-  const [memberships, setMemberships] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await api.get('/memberships/admin/all');
-        setMemberships(res.data.data || []);
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
-    };
-    fetch();
-  }, []);
+  const { data: memberships = [], isLoading: loading } = useMemberships();
 
   const filtered = filter === 'all' ? memberships : memberships.filter(m => m.status === filter);
 

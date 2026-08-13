@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Heart, ShieldAlert, Award, ArrowRight, Clock } from 'lucide-react';
-import api from '../services/api.js';
 import Skeleton from '../components/common/Skeleton.jsx';
+import { useTempleContent, useAnnouncements } from '../hooks/queries/useQueries.js';
 import heroBg from '../assets/hero_bg.jpg';
 
 const Home = () => {
   const { t } = useTranslation();
-  const [content, setContent] = useState(null);
-  const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: content, isLoading: contentLoading } = useTempleContent();
+  const { data: allNotices = [], isLoading: noticesLoading } = useAnnouncements();
+  const loading = contentLoading || noticesLoading;
+  const notices = allNotices.slice(0, 3);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const heroRef = useRef(null);
   const rafRef = useRef(null);
@@ -120,7 +121,6 @@ const Home = () => {
 
   useEffect(() => {
     const handleOrientation = (e) => {
-      // gamma = left-right tilt (-90 to 90), beta = front-back (-180 to 180)
       const x = Math.max(-1, Math.min(1, (e.gamma || 0) / 30));
       const y = Math.max(-1, Math.min(1, ((e.beta || 0) - 30) / 30));
       setTilt({ x: x * 18, y: y * 12 });
@@ -132,24 +132,6 @@ const Home = () => {
       window.removeEventListener('deviceorientation', handleOrientation);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, []);
-
-  useEffect(() => {
-    const fetchHomeData = async () => {
-      try {
-        const [contentRes, noticeRes] = await Promise.all([
-          api.get('/admin/content'),
-          api.get('/announcements')
-        ]);
-        setContent(contentRes.data.data);
-        setNotices(noticeRes.data.data.slice(0, 3));
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHomeData();
   }, []);
 
   return (

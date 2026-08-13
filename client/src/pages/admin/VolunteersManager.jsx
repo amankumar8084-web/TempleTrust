@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AdminPageLayout from '../../components/layout/AdminPageLayout.jsx';
 import { CheckCircle, XCircle } from 'lucide-react';
-import api from '../../services/api.js';
 import Skeleton from '../../components/common/Skeleton.jsx';
+import { useVolunteers } from '../../hooks/queries/useQueries.js';
+import { useApproveVolunteer } from '../../hooks/queries/useMutations.js';
 
 const statusColor = (s) => ({
   approved: 'bg-green-100 text-green-700',
@@ -11,25 +12,16 @@ const statusColor = (s) => ({
 }[s] || 'bg-gray-100 text-gray-700');
 
 const VolunteersManager = () => {
-  const [volunteers, setVolunteers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
-  const fetchVolunteers = async () => {
-    try {
-      const res = await api.get('/volunteers/admin/all');
-      setVolunteers(res.data.data || []);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  };
+  const { data: volunteers = [], isLoading: loading } = useVolunteers();
+  const approveMutation = useApproveVolunteer();
 
-  useEffect(() => { fetchVolunteers(); }, []);
-
-  const handleApprove = async (id, status) => {
-    try {
-      await api.put(`/volunteers/admin/${id}/approve`, { status });
-      setVolunteers(prev => prev.map(v => v._id === id ? { ...v, status } : v));
-    } catch (err) { alert(err.response?.data?.message || 'Error updating status.'); }
+  const handleApprove = (id, status) => {
+    approveMutation.mutate(
+      { id, status },
+      { onError: (err) => alert(err.response?.data?.message || 'Error updating status.') }
+    );
   };
 
   const filtered = filter === 'all' ? volunteers : volunteers.filter(v => v.status === filter);

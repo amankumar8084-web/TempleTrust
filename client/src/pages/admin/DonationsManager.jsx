@@ -1,24 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AdminPageLayout from '../../components/layout/AdminPageLayout.jsx';
 import { Download, Search } from 'lucide-react';
-import api, { API_BASE_URL } from '../../services/api.js';
+import { API_BASE_URL } from '../../services/api.js';
 import Skeleton from '../../components/common/Skeleton.jsx';
+import { useDonations } from '../../hooks/queries/useQueries.js';
 
 const DonationsManager = () => {
-  const [donations, setDonations] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await api.get('/donations/history');
-        setDonations(res.data.data || []);
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
-    };
-    fetch();
-  }, []);
+  const { data: donations = [], isLoading: loading } = useDonations();
 
   const filtered = donations.filter(d =>
     d.donorName?.toLowerCase().includes(search.toLowerCase()) ||

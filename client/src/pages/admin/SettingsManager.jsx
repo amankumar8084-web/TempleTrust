@@ -1,34 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import AdminPageLayout from '../../components/layout/AdminPageLayout.jsx';
 import { Save } from 'lucide-react';
-import api from '../../services/api.js';
+import Skeleton from '../../components/common/Skeleton.jsx';
+import { useSettings } from '../../hooks/queries/useQueries.js';
+import { useUpdateSettings } from '../../hooks/queries/useMutations.js';
 
 const SettingsManager = () => {
   const [settings, setSettings] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
-  useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await api.get('/admin/settings');
-        setSettings(res.data.data);
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
-    };
-    fetch();
-  }, []);
+  const { data: serverSettings, isLoading: loading } = useSettings();
+  const updateMutation = useUpdateSettings();
 
-  const handleSave = async () => {
-    setSaving(true);
+  const saving = updateMutation.isPending;
+
+  useEffect(() => {
+    if (serverSettings) {
+      setSettings(serverSettings);
+    }
+  }, [serverSettings]);
+
+  const handleSave = () => {
     setMsg('');
-    try {
-      await api.put('/admin/settings', settings);
-      setMsg('Settings saved successfully!');
-    } catch (err) {
-      setMsg(err.response?.data?.message || 'Error saving settings.');
-    } finally { setSaving(false); }
+    updateMutation.mutate(settings, {
+      onSuccess: () => setMsg('Settings saved successfully!'),
+      onError: (err) => setMsg(err.response?.data?.message || 'Error saving settings.')
+    });
   };
 
   const toggleSettings = [

@@ -1,55 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AdminPageLayout from '../../components/layout/AdminPageLayout.jsx';
 import { Plus, Pin, Trash2 } from 'lucide-react';
-import api from '../../services/api.js';
 import Skeleton from '../../components/common/Skeleton.jsx';
+import { useAnnouncements } from '../../hooks/queries/useQueries.js';
+import { useCreateAnnouncement, useDeleteAnnouncement, useTogglePinAnnouncement } from '../../hooks/queries/useMutations.js';
 
 const AnnouncementsManager = () => {
-  const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', content: '', category: 'Notice', isPinned: false });
-  const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState('');
 
-  const fetchNotices = async () => {
-    try {
-      const res = await api.get('/announcements');
-      setNotices(res.data.data || []);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  };
+  const { data: notices = [], isLoading: loading } = useAnnouncements();
 
-  useEffect(() => { fetchNotices(); }, []);
+  const createMutation = useCreateAnnouncement();
+  const deleteMutation = useDeleteAnnouncement();
+  const togglePinMutation = useTogglePinAnnouncement();
 
-  const handleCreate = async (e) => {
+  const handleCreate = (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setMsg('');
-    try {
-      await api.post('/announcements/admin', form);
-      setMsg('Announcement published!');
-      setShowForm(false);
-      setForm({ title: '', content: '', category: 'Notice', isPinned: false });
-      fetchNotices();
-    } catch (err) {
-      setMsg(err.response?.data?.message || 'Error creating notice.');
-    } finally { setSubmitting(false); }
+    createMutation.mutate(form, {
+      onSuccess: () => {
+        setMsg('Announcement published!');
+        setShowForm(false);
+        setForm({ title: '', content: '', category: 'Notice', isPinned: false });
+      },
+      onError: (err) => setMsg(err.response?.data?.message || 'Error creating notice.')
+    });
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (!window.confirm('Delete this notice?')) return;
-    try {
-      await api.delete(`/announcements/admin/${id}`);
-      setNotices(prev => prev.filter(n => n._id !== id));
-    } catch (err) { alert('Error deleting notice.'); }
+    deleteMutation.mutate(id, {
+      onError: () => alert('Error deleting notice.')
+    });
   };
 
-  const handleTogglePin = async (id, currentState) => {
-    try {
-      await api.put(`/announcements/admin/${id}`, { isPinned: !currentState });
-      setNotices(prev => prev.map(n => n._id === id ? { ...n, isPinned: !currentState } : n));
-    } catch (err) { alert('Error updating notice.'); }
+  const handleTogglePin = (id, currentState) => {
+    togglePinMutation.mutate({ id, isPinned: !currentState }, {
+      onError: () => alert('Error updating notice.')
+    });
   };
 
   return (

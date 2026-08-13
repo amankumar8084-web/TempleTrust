@@ -1,31 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Download } from 'lucide-react';
-import api from '../services/api.js';
+import { useTempleContent } from '../hooks/queries/useQueries.js';
 import defaultQr from '../assets/donation_qr.jpg';
 import defaultBank from '../assets/donation_bank.jpg';
 
 const Donate = () => {
-  const [donationImages, setDonationImages] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchDonationImages = async () => {
-      try {
-        const res = await api.get('/admin/content');
-        if (res.data?.data?.donationImages && res.data.data.donationImages.length > 0) {
-          setDonationImages(res.data.data.donationImages);
-        } else {
-          setDonationImages([defaultQr, defaultBank]);
-        }
-      } catch (err) {
-        console.error(err);
-        setDonationImages([defaultQr, defaultBank]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDonationImages();
-  }, []);
+  const { data: content, isLoading: loading } = useTempleContent();
+  const donationImages = content?.donationImages?.length > 0
+    ? content.donationImages
+    : [defaultQr, defaultBank];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-spiritual">

@@ -1,55 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { MapPin, Calendar, Clock, Sparkles } from 'lucide-react';
-import api from '../services/api.js';
+import { MapPin, Calendar, Clock } from 'lucide-react';
 import Skeleton from '../components/common/Skeleton.jsx';
+import { useEvents, useMyEvents } from '../hooks/queries/useQueries.js';
+import { useRegisterEvent } from '../hooks/queries/useMutations.js';
 
 const Events = () => {
   const { user } = useSelector((state) => state.auth);
-  
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [registeredIds, setRegisteredIds] = useState([]);
-  const [actionLoading, setActionLoading] = useState(false);
+
+  const { data: events = [], isLoading: eventsLoading } = useEvents();
+  const { data: myEvents = [], isLoading: myEventsLoading } = useMyEvents(!!user);
+  const loading = eventsLoading || (!!user && myEventsLoading);
+
+  const registeredIds = myEvents.map(r => r.eventId?._id);
+  const registerMutation = useRegisterEvent();
+
   const [msg, setMsg] = useState('');
-
-  const fetchEventsData = async () => {
-    try {
-      const [eventsRes, myEventsRes] = await Promise.all([
-        api.get('/events'),
-        user ? api.get('/events/my-events') : Promise.resolve({ data: { data: [] } })
-      ]);
-      setEvents(eventsRes.data.data);
-      const myRegs = myEventsRes.data.data.map(r => r.eventId?._id);
-      setRegisteredIds(myRegs);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchEventsData();
-  }, [user]);
 
   const handleRegister = async (eventId) => {
     if (!user) {
       alert("Please log in to register for events.");
       return;
     }
-
-    setActionLoading(true);
     setMsg('');
-    try {
-      await api.post('/events/register', { eventId });
-      setMsg('Registered successfully! Confirmation sent.');
-      fetchEventsData();
-    } catch (err) {
-      setMsg(err.response?.data?.message || 'Failed to register.');
-    } finally {
-      setActionLoading(false);
-    }
+    registerMutation.mutate(eventId, {
+      onSuccess: () => setMsg('Registered successfully! Confirmation sent.'),
+      onError: (err) => setMsg(err.response?.data?.message || 'Failed to register.')
+    });
   };
 
   return (
@@ -132,12 +109,11 @@ const Events = () => {
                     ) : (
                       <button
                         onClick={() => handleRegister(event._id)}
-                        disabled={isFull || actionLoading}
-                        className={`text-xs font-bold px-4 py-2 rounded-xl transition ${
-                          isFull
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-saffron-600 hover:bg-saffron-700 text-white shadow hover:scale-105'
-                        }`}
+                        disabled={isFull || registerMutation.isPending}
+                        className={`text-xs font-bold px-4 py-2 rounded-xl transition ${isFull
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-saffron-600 hover:bg-saffron-700 text-white shadow hover:scale-105'
+                          }`}
                       >
                         {isFull ? 'Sold Out' : 'Register Now'}
                       </button>

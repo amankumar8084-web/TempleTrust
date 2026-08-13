@@ -1,28 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import api from '../services/api.js';
+import React from 'react';
 import Skeleton from '../components/common/Skeleton.jsx';
+import { useTempleContent } from '../hooks/queries/useQueries.js';
 
 const About = () => {
-  const [content, setContent] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchContent = async () => {
-      try {
-        const res = await api.get('/admin/content');
-        setContent(res.data.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchContent();
-  }, []);
+  const { data: content, isLoading: loading } = useTempleContent();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16 font-spiritual">
-      
+
       {/* Page Header */}
       <div className="text-center space-y-4">
         <span className="text-saffron-600 font-bold tracking-widest text-xs uppercase bg-amber-100 dark:bg-amber-950/40 px-3 py-1.5 rounded-full">
@@ -38,7 +23,7 @@ const About = () => {
 
       {/* Grid: Details */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        
+
         {/* Left Column: History & Significance */}
         <div className="bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800/80 p-8 rounded-3xl shadow-lg space-y-6">
           <div className="space-y-2">

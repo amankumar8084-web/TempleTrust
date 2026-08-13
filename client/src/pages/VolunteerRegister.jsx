@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { ShieldCheck, Heart, Award } from 'lucide-react';
-import api from '../services/api.js';
+import { useVolunteerProfile } from '../hooks/queries/useQueries.js';
+import { useRegisterVolunteer } from '../hooks/queries/useMutations.js';
 
 const SKILLS_LIST = ['Management', 'Cooking', 'IT & Media', 'First Aid / Medical', 'Event Decoration', 'Security / Crowd Control'];
 const AVAILABILITY_LIST = ['Weekends', 'Morning Aarti (5 AM - 8 AM)', 'Evening Aarti (6 PM - 9 PM)', 'Festivals & Special Events', 'Emergency Calls'];
@@ -11,24 +12,11 @@ const VolunteerRegister = () => {
 
   const [skills, setSkills] = useState([]);
   const [availability, setAvailability] = useState([]);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const fetchProfile = async () => {
-    if (!user) return;
-    try {
-      const res = await api.get('/volunteers/profile');
-      setProfile(res.data.data);
-    } catch {
-      setProfile(null);
-    }
-  };
-
-  useEffect(() => {
-    fetchProfile();
-  }, [user]);
+  const { data: profile } = useVolunteerProfile(!!user);
+  const registerMutation = useRegisterVolunteer();
 
   const handleCheckboxChange = (val, list, setList) => {
     if (list.includes(val)) {
@@ -38,35 +26,32 @@ const VolunteerRegister = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!user) {
       alert("Please log in first to apply.");
       return;
     }
 
-    setLoading(true);
     setMsg('');
     setErrorMsg('');
-    try {
-      const res = await api.post('/volunteers/register', { skills, availability });
-      setMsg(res.data.message);
-      fetchProfile();
-    } catch (err) {
-      setErrorMsg(err.response?.data?.message || 'Error sending registration.');
-    } finally {
-      setLoading(false);
-    }
+    registerMutation.mutate(
+      { skills, availability },
+      {
+        onSuccess: (res) => setMsg(res.data.message),
+        onError: (err) => setErrorMsg(err.response?.data?.message || 'Error sending registration.')
+      }
+    );
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-spiritual">
-      
+
       {profile ? (
         <div className="bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800/80 p-8 rounded-3xl text-center max-w-lg mx-auto shadow-xl space-y-6">
           <ShieldCheck className="h-16 w-16 text-saffron-600 mx-auto" />
           <h2 className="text-2xl font-extrabold text-gray-800 dark:text-white">Volunteer Status Profile</h2>
-          
+
           <div className="bg-amber-50 dark:bg-slate-800 p-4 rounded-2xl text-xs text-left space-y-2 text-amber-900 dark:text-amber-300">
             <div><strong>Application Status:</strong> <span className="uppercase font-bold text-saffron-700">{profile.status}</span></div>
             <div><strong>Assigned Duties:</strong> {profile.dutiesAssigned?.length || 0} tasks assigned</div>
@@ -79,7 +64,7 @@ const VolunteerRegister = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-          
+
           {/* Info Panels */}
           <div className="space-y-6">
             <span className="text-saffron-600 font-bold tracking-widest text-xs uppercase bg-amber-100 dark:bg-amber-950/40 px-3 py-1.5 rounded-full">
@@ -128,7 +113,7 @@ const VolunteerRegister = () => {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
-                
+
                 {/* Skills */}
                 <div className="space-y-2.5">
                   <label className="text-xs font-bold text-gray-700 dark:text-slate-300">Select Your Skills / Interests</label>
@@ -167,10 +152,10 @@ const VolunteerRegister = () => {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={registerMutation.isPending}
                   className="w-full bg-spiritual-gradient text-white font-bold py-3 rounded-xl shadow-lg hover:scale-102 transition"
                 >
-                  {loading ? 'Submitting Application...' : 'Submit Application'}
+                  {registerMutation.isPending ? 'Submitting Application...' : 'Submit Application'}
                 </button>
 
               </form>

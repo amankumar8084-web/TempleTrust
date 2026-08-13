@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import AdminPageLayout from '../../components/layout/AdminPageLayout.jsx';
 import { Trash2, UploadCloud, Image as ImageIcon, X } from 'lucide-react';
-import api from '../../services/api.js';
 import Skeleton from '../../components/common/Skeleton.jsx';
+import { useGallery } from '../../hooks/queries/useQueries.js';
+import { useUploadGallery, useDeleteGallery } from '../../hooks/queries/useMutations.js';
 
 const GalleryManager = () => {
-  const [media, setMedia] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState({ text: '', type: '' });
   const [preview, setPreview] = useState(null); // { url, title, idx }
   const fileInputRef = useRef(null);
@@ -16,15 +14,14 @@ const GalleryManager = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
-  const fetchMedia = async () => {
-    try {
-      const res = await api.get('/gallery?limit=50');
-      setMedia(res.data.data || []);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  };
+  // Note: we fetch 50 for the manager page
+  const { data: galleryData, isLoading: loading } = useGallery({ page: 1, limit: 50 });
+  const media = galleryData?.data || [];
 
-  useEffect(() => { fetchMedia(); }, []);
+  const uploadMutation = useUploadGallery();
+  const deleteMutation = useDeleteGallery();
+
+  const uploading = uploadMutation.isPending;
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -38,7 +35,7 @@ const GalleryManager = () => {
     setShowForm(true);
   };
 
-  const handleUpload = async (e) => {
+  const handleUpload = (e) => {
     e.preventDefault();
     if (!selectedFile) {
       setMsg({ text: 'Please select a file first.', type: 'error' });
@@ -49,7 +46,6 @@ const GalleryManager = () => {
       return;
     }
 
-    setUploading(true);
     setMsg({ text: '', type: '' });
 
     const formData = new FormData();
@@ -59,33 +55,25 @@ const GalleryManager = () => {
     formData.append('album', form.album || 'General');
     formData.append('type', form.type);
 
-    try {
-      await api.post('/gallery/admin', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      setMsg({ text: 'Media uploaded to gallery successfully!', type: 'success' });
-      setShowForm(false);
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      setForm({ title: '', category: 'Darshan', album: '', type: 'photo' });
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      fetchMedia();
-    } catch (err) {
-      setMsg({ text: err.response?.data?.message || 'Upload failed. Try again.', type: 'error' });
-    } finally {
-      setUploading(false);
-    }
+    uploadMutation.mutate(formData, {
+      onSuccess: () => {
+        setMsg({ text: 'Media uploaded to gallery successfully!', type: 'success' });
+        setShowForm(false);
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setForm({ title: '', category: 'Darshan', album: '', type: 'photo' });
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      },
+      onError: (err) => setMsg({ text: err.response?.data?.message || 'Upload failed. Try again.', type: 'error' })
+    });
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (!window.confirm('Delete this media item?')) return;
-    try {
-      await api.delete(`/gallery/admin/${id}`);
-      setMedia(prev => prev.filter(m => m._id !== id));
-      setMsg({ text: 'Media deleted.', type: 'success' });
-    } catch (err) {
-      setMsg({ text: 'Error deleting media.', type: 'error' });
-    }
+    deleteMutation.mutate(id, {
+      onSuccess: () => setMsg({ text: 'Media deleted.', type: 'success' }),
+      onError: () => setMsg({ text: 'Error deleting media.', type: 'error' })
+    });
   };
 
   const cancelUpload = () => {

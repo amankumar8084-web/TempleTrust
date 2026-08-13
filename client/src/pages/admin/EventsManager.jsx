@@ -1,48 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import AdminPageLayout from '../../components/layout/AdminPageLayout.jsx';
 import { Plus, Trash2, Users, CalendarRange } from 'lucide-react';
-import api from '../../services/api.js';
 import Skeleton from '../../components/common/Skeleton.jsx';
+import { useEvents } from '../../hooks/queries/useQueries.js';
+import { useCreateEvent, useDeleteEvent } from '../../hooks/queries/useMutations.js';
 
 const EventsManager = () => {
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', date: '', time: '', venue: '', registrationLimit: 100, fees: 0 });
-  const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState('');
 
-  const fetchEvents = async () => {
-    try {
-      const res = await api.get('/events');
-      setEvents(res.data.data || []);
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  };
+  const { data: events = [], isLoading: loading } = useEvents();
+  const createMutation = useCreateEvent();
+  const deleteMutation = useDeleteEvent();
 
-  useEffect(() => { fetchEvents(); }, []);
-
-  const handleCreate = async (e) => {
+  const handleCreate = (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setMsg('');
-    try {
-      await api.post('/events/admin', form);
-      setMsg('Event created successfully!');
-      setShowForm(false);
-      setForm({ title: '', description: '', date: '', time: '', venue: '', registrationLimit: 100, fees: 0 });
-      fetchEvents();
-    } catch (err) {
-      setMsg(err.response?.data?.message || 'Error creating event.');
-    } finally { setSubmitting(false); }
+
+    createMutation.mutate(form, {
+      onSuccess: () => {
+        setMsg('Event created successfully!');
+        setShowForm(false);
+        setForm({ title: '', description: '', date: '', time: '', venue: '', registrationLimit: 100, fees: 0 });
+      },
+      onError: (err) => setMsg(err.response?.data?.message || 'Error creating event.')
+    });
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (!window.confirm('Delete this event?')) return;
-    try {
-      await api.delete(`/events/admin/${id}`);
-      setEvents(prev => prev.filter(e => e._id !== id));
-    } catch (err) { alert(err.response?.data?.message || 'Error deleting event.'); }
+    deleteMutation.mutate(id, {
+      onError: (err) => alert(err.response?.data?.message || 'Error deleting event.')
+    });
   };
 
   return (

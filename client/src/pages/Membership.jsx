@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Award, Check, CreditCard, Sparkles } from 'lucide-react';
 import api from '../services/api.js';
 import Skeleton from '../components/common/Skeleton.jsx';
+import { useMembershipStatus } from '../hooks/queries/useQueries.js';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../hooks/queries/queryKeys.js';
 
 const PLAN_TIERS = [
   {
@@ -30,31 +33,17 @@ const PLAN_TIERS = [
 
 const Membership = () => {
   const { user } = useSelector((state) => state.auth);
+  const queryClient = useQueryClient();
 
-  const [activePlan, setActivePlan] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { data: activePlan, isLoading: loading } = useMembershipStatus(!!user);
+
   const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [successPlan, setSuccessPlan] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const fetchMembershipStatus = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const res = await api.get('/memberships/status');
-      setActivePlan(res.data.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  const fetchMembershipStatus = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.membershipStatus });
   };
-
-  useEffect(() => {
-    fetchMembershipStatus();
-  }, [user]);
 
   const handleSubscribe = async (planName) => {
     if (!user) {
@@ -123,7 +112,7 @@ const Membership = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12 font-spiritual">
-      
+
       {/* Header */}
       <div className="text-center space-y-3">
         <span className="text-saffron-600 font-bold tracking-widest text-xs uppercase bg-amber-100 dark:bg-amber-950/40 px-3 py-1.5 rounded-full">
@@ -154,7 +143,7 @@ const Membership = () => {
             <div className="absolute top-2 right-2 text-amber-300 opacity-20">
               <Award className="w-32 h-32" />
             </div>
-            
+
             <div className="space-y-4 relative z-10">
               <div className="flex justify-between items-start">
                 <div>

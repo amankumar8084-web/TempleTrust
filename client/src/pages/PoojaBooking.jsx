@@ -1,15 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Calendar, User, Clock, CheckCircle } from 'lucide-react';
 import api from '../services/api.js';
 import Skeleton from '../components/common/Skeleton.jsx';
+import { usePoojaSlots } from '../hooks/queries/useQueries.js';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '../hooks/queries/queryKeys.js';
 
 const PoojaBooking = () => {
   const { user } = useSelector((state) => state.auth);
+  const queryClient = useQueryClient();
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [slots, setSlots] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: slots = [], isLoading: loading } = usePoojaSlots(date);
+
   const [selectedSlot, setSelectedSlot] = useState(null);
 
   // Devotee details
@@ -20,22 +24,6 @@ const PoojaBooking = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [successBooking, setSuccessBooking] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
-
-  useEffect(() => {
-    const fetchSlots = async () => {
-      setLoading(true);
-      setErrorMessage('');
-      try {
-        const res = await api.get(`/poojas/slots?date=${date}`);
-        setSlots(res.data.data);
-      } catch (err) {
-        setErrorMessage('Failed to load slots.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchSlots();
-  }, [date]);
 
   const handleBooking = async (e) => {
     e.preventDefault();
@@ -74,8 +62,7 @@ const PoojaBooking = () => {
             });
             setSuccessBooking(verifyRes.data.booking);
             // Refresh slots
-            const slotsRes = await api.get(`/poojas/slots?date=${date}`);
-            setSlots(slotsRes.data.data);
+            queryClient.invalidateQueries({ queryKey: queryKeys.poojaSlots(date) });
           } catch (err) {
             setErrorMessage('Payment verification failed.');
           }
@@ -103,10 +90,9 @@ const PoojaBooking = () => {
           razorpaySignature: 'mock_sig_dev_bypass_998877'
         });
         setSuccessBooking(verifyRes.data.booking);
-        
+
         // Refresh slots
-        const slotsRes = await api.get(`/poojas/slots?date=${date}`);
-        setSlots(slotsRes.data.data);
+        queryClient.invalidateQueries({ queryKey: queryKeys.poojaSlots(date) });
       }
     } catch (err) {
       setErrorMessage(err.response?.data?.message || 'Error processing booking.');
@@ -117,7 +103,7 @@ const PoojaBooking = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 font-spiritual">
-      
+
       {successBooking ? (
         <div className="bg-white dark:bg-slate-900 border border-green-200 dark:border-green-950 p-8 rounded-3xl text-center max-w-lg mx-auto shadow-2xl space-y-6">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
@@ -151,7 +137,7 @@ const PoojaBooking = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Calendar and Slots Listing */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-white dark:bg-slate-900 border border-amber-100 dark:border-slate-800/80 p-6 rounded-3xl shadow flex flex-col md:flex-row gap-4 justify-between items-center">
@@ -190,13 +176,12 @@ const PoojaBooking = () => {
                       key={slot._id}
                       disabled={isFull}
                       onClick={() => setSelectedSlot(slot)}
-                      className={`w-full text-left p-4 rounded-2xl border transition flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${
-                        isFull
-                          ? 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed dark:bg-slate-950 dark:border-slate-900'
-                          : isCurrentSelection
+                      className={`w-full text-left p-4 rounded-2xl border transition flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${isFull
+                        ? 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed dark:bg-slate-950 dark:border-slate-900'
+                        : isCurrentSelection
                           ? 'border-saffron-600 bg-amber-50/50 dark:bg-amber-950/20'
                           : 'border-gray-200 dark:border-slate-800 hover:border-amber-300'
-                      }`}
+                        }`}
                     >
                       <div className="space-y-1">
                         <h4 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
@@ -208,7 +193,7 @@ const PoojaBooking = () => {
                           <span>{slot.startTime} - {slot.endTime}</span>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-2 md:pt-0">
                         <div className="text-left md:text-right">
                           <div className="text-[10px] text-gray-500">Availability</div>

@@ -1,29 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Megaphone, AlertCircle, Calendar } from 'lucide-react';
-import api from '../services/api.js';
 import Skeleton from '../components/common/Skeleton.jsx';
+import { useAnnouncements } from '../hooks/queries/useQueries.js';
 
 const Announcements = () => {
-  const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchNotices = async () => {
-      try {
-        const res = await api.get('/announcements');
-        setNotices(res.data.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchNotices();
-  }, []);
+  const { data: notices = [], isLoading: loading } = useAnnouncements();
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8 font-spiritual">
-      
+
       {/* Header */}
       <div className="text-center space-y-3">
         <span className="text-saffron-600 font-bold tracking-widest text-xs uppercase bg-amber-100 dark:bg-amber-950/40 px-3 py-1.5 rounded-full">
@@ -51,13 +36,12 @@ const Announcements = () => {
             return (
               <div
                 key={notice._id}
-                className={`p-6 rounded-3xl border shadow-md flex gap-4 transition hover:-translate-y-0.5 ${
-                  isEmergency
+                className={`p-6 rounded-3xl border shadow-md flex gap-4 transition hover:-translate-y-0.5 ${isEmergency
                     ? 'bg-red-50/50 border-red-200 dark:bg-red-950/10 dark:border-red-900/40'
                     : notice.isPinned
-                    ? 'bg-amber-50/50 border-amber-200 dark:bg-amber-950/10 dark:border-amber-900/40'
-                    : 'bg-white border-gray-100 dark:bg-slate-900 dark:border-slate-800'
-                }`}
+                      ? 'bg-amber-50/50 border-amber-200 dark:bg-amber-950/10 dark:border-amber-900/40'
+                      : 'bg-white border-gray-100 dark:bg-slate-900 dark:border-slate-800'
+                  }`}
               >
                 <div className="pt-1">
                   {isEmergency ? (
@@ -75,9 +59,8 @@ const Announcements = () => {
                         Pinned
                       </span>
                     )}
-                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                      isEmergency ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
+                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${isEmergency ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
                       {notice.category}
                     </span>
                   </div>
