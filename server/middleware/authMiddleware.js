@@ -7,11 +7,13 @@ export const protect = async (req, res, next) => {
   try {
     let token;
 
-    // 1. Get token from Authorization header or cookies
+    // 1. Get token from Authorization header, cookies, or query string
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
     } else if (req.cookies && req.cookies.accessToken) {
       token = req.cookies.accessToken;
+    } else if (req.query && req.query.token) {
+      token = req.query.token;
     }
 
     if (!token) {
@@ -45,7 +47,7 @@ export const restrictTo = (...roles) => {
     if (!req.user || !req.user.role) {
       return next(new ForbiddenError('You do not have permission to perform this action.'));
     }
-    
+
     const userRole = req.user.role.name;
     if (!roles.includes(userRole) && userRole !== 'Super Admin') {
       return next(new ForbiddenError('You do not have permission to perform this action.'));
@@ -63,7 +65,7 @@ export const hasPermission = (permission) => {
     }
 
     const { permissions, name } = req.user.role;
-    
+
     // Super Admin bypass
     if (name === 'Super Admin') {
       return next();
@@ -84,6 +86,8 @@ export const optionalProtect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
     } else if (req.cookies && req.cookies.accessToken) {
       token = req.cookies.accessToken;
+    } else if (req.query && req.query.token) {
+      token = req.query.token;
     }
 
     if (token) {
