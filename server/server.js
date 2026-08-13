@@ -28,6 +28,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import emailRoutes from './routes/emailRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import userProfileRoutes from './routes/userProfileRoutes.js';
+import financialRoutes from './routes/financialRoutes.js';
 
 // Initialize env config
 dotenv.config();
@@ -75,6 +76,7 @@ app.use('/api/v1/announcements', announcementRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/chat', chatRoutes);
 app.use('/api/v1/users', userProfileRoutes);
+app.use('/api/v1/financials', financialRoutes);
 
 // Serve uploaded avatars statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

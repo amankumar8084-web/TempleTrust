@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import {
   LayoutDashboard,
   HeartHandshake,
+  IndianRupee,
   CalendarClock,
   CalendarRange,
   ShieldCheck,
@@ -25,6 +26,7 @@ const AdminSidebar = ({ onClose }) => {
   const menuItems = [
     { name: 'Overview', path: '/admin', icon: LayoutDashboard },
     { name: 'Donations', path: '/admin/donations', icon: HeartHandshake },
+    { name: 'Financials', path: '/admin/financials', icon: IndianRupee },
     { name: 'Pooja Bookings', path: '/admin/bookings', icon: CalendarClock },
     { name: 'Events', path: '/admin/events', icon: CalendarRange },
     { name: 'Volunteers', path: '/admin/volunteers', icon: ShieldCheck },

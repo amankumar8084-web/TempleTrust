@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { User, TrendingUp, Settings, Edit2, Mail, Phone, Calendar, Shield, Clock, ImageIcon, Bell } from 'lucide-react';
-import api from '../services/api.js';
+import { User, TrendingUp, Settings, Edit2, Mail, Phone, Calendar, Shield, Clock, ImageIcon, Bell, Download, ChevronLeft, ChevronRight, IndianRupee } from 'lucide-react';
+import api, { API_BASE_URL } from '../services/api.js';
 import Skeleton from '../components/common/Skeleton.jsx';
 import ProfilePictureManager from '../components/profile/ProfilePictureManager.jsx';
 import ProfileEditModal from '../components/profile/ProfileEditModal.jsx';
@@ -11,19 +11,27 @@ import { updateProfileSuccess } from '../features/auth/authSlice.js';
 const UserDashboard = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const [data, setData] = useState({ financials: null });
+  const [data, setData] = useState({ financials: null, records: [], pagination: null });
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [finPage, setFinPage] = useState(1);
+  const [finLoading, setFinLoading] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       try {
-        const [finRes, profRes] = await Promise.all([
-          api.get('/admin/financials'),
+        const [finSumRes, finRecRes, profRes] = await Promise.all([
+          api.get('/financials/public-summary'),
+          api.get(`/financials/public?limit=10&page=${finPage}`),
           api.get('/users/profile')
         ]);
-        setData({ financials: finRes.data.data });
+        setData(prev => ({
+          ...prev,
+          financials: finSumRes.data.data,
+          records: finRecRes.data.data,
+          pagination: finRecRes.data.pagination
+        }));
         if (profRes.data?.data) {
           dispatch(updateProfileSuccess(profRes.data.data));
         }
@@ -33,8 +41,31 @@ const UserDashboard = () => {
         setLoading(false);
       }
     };
-    fetchData();
-  }, [dispatch]);
+    fetchInitialData();
+  }, [dispatch, finPage]);
+
+  // Separate fetch for pagination clicks so we only reload the table
+  const fetchRecords = async (page) => {
+    setFinLoading(true);
+    try {
+      const res = await api.get(`/financials/public?limit=10&page=${page}`);
+      setData(prev => ({
+        ...prev,
+        records: res.data.data,
+        pagination: res.data.pagination
+      }));
+      setFinPage(page);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFinLoading(false);
+    }
+  };
+
+  const handleExport = () => {
+    const token = localStorage.getItem('token');
+    window.open(`${API_BASE_URL}/financials/public-export?token=${token}`, '_blank');
+  };
 
   const SECTIONS = [
     { id: 'overview', label: 'Overview', icon: User },
@@ -45,6 +76,15 @@ const UserDashboard = () => {
   const memberSince = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' })
     : 'N/A';
+
+  const typeBadge = (type) => {
+    const styles = {
+      Donation: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
+      Revenue: 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300',
+      Expenditure: 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+    };
+    return <span className={`${styles[type] || ''} font-bold px-2 py-0.5 rounded-full text-[9px]`}>{type}</span>;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 font-spiritual">
@@ -181,30 +221,90 @@ const UserDashboard = () => {
               {/* FINANCIALS */}
               {activeSection === 'finance' && (
                 <div className="space-y-6">
-                  <div className="border-b border-gray-100 dark:border-slate-800 pb-4">
-                    <h2 className="text-lg font-bold text-gray-800 dark:text-white">Temple Financial Transparency Statement</h2>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">Published and verified by the Board of Trustees for devotees' verification.</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-6 rounded-2xl space-y-2">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400">Total Funds Received</span>
-                      <div className="text-3xl font-extrabold text-emerald-800 dark:text-emerald-300">₹{(data.financials?.totalFundsComing || 0).toLocaleString()}</div>
-                      <p className="text-[11px] text-emerald-600/80">Includes devotee donations, trust endowments, and service collections.</p>
-                    </div>
-                    <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 p-6 rounded-2xl space-y-2">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-rose-600 dark:text-rose-400">Total Expenses / Outgoings</span>
-                      <div className="text-3xl font-extrabold text-rose-800 dark:text-rose-300">₹{(data.financials?.totalExpenses || 0).toLocaleString()}</div>
-                      <p className="text-[11px] text-rose-600/80">Includes daily Annadanam, staff salaries, constructions, and social aid.</p>
-                    </div>
-                  </div>
-                  <div className="p-5 bg-amber-50 dark:bg-slate-800 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 border border-amber-200/50 dark:border-slate-700">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 dark:border-slate-800 pb-4">
                     <div>
-                      <h4 className="text-sm font-bold text-maroon-900 dark:text-amber-400">Net Surplus / Reserve Balance</h4>
-                      <p className="text-xs text-gray-500 mt-0.5">Retained in trust savings account for upcoming major festival celebrations.</p>
+                      <h2 className="text-lg font-bold text-gray-800 dark:text-white">Temple Financial Transparency</h2>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">Published and verified by the Board of Trustees for devotees' verification.</p>
                     </div>
-                    <div className="text-2xl font-extrabold text-saffron-700 dark:text-amber-400">
-                      ₹{Math.max(0, (data.financials?.totalFundsComing || 0) - (data.financials?.totalExpenses || 0)).toLocaleString()}
+                    <button onClick={handleExport}
+                      className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition flex-shrink-0">
+                      <Download className="h-4 w-4" /> Export Report
+                    </button>
+                  </div>
+
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-4 rounded-2xl">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><IndianRupee className="h-3 w-3" /> Donations</span>
+                      <div className="text-2xl mt-1 font-extrabold text-emerald-800 dark:text-emerald-300">₹{(data.financials?.totalDonations || 0).toLocaleString()}</div>
                     </div>
+                    <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 p-4 rounded-2xl">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Revenue</span>
+                      <div className="text-2xl mt-1 font-extrabold text-blue-800 dark:text-blue-300">₹{(data.financials?.totalRevenue || 0).toLocaleString()}</div>
+                    </div>
+                    <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 p-4 rounded-2xl">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1"><TrendingUp className="h-3 w-3 rotate-180" /> Expenditure</span>
+                      <div className="text-2xl mt-1 font-extrabold text-rose-800 dark:text-rose-300">₹{(data.financials?.totalExpenditure || 0).toLocaleString()}</div>
+                    </div>
+                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 p-4 rounded-2xl">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1"><Shield className="h-3 w-3" /> Net Balance</span>
+                      <div className="text-2xl mt-1 font-extrabold text-amber-800 dark:text-amber-300">₹{(data.financials?.netBalance || 0).toLocaleString()}</div>
+                    </div>
+                  </div>
+
+                  {/* Public Transaction Table */}
+                  <div className="mt-8">
+                    <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3">Recent Transactions (Public View)</h3>
+                    <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm relative">
+                      {finLoading && <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] z-10" />}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs text-left">
+                          <thead className="bg-gray-50 dark:bg-slate-800/50 text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                            <tr>
+                              <th className="px-4 py-3 font-bold">Date</th>
+                              <th className="px-4 py-3 font-bold">Type</th>
+                              <th className="px-4 py-3 font-bold">Category</th>
+                              <th className="px-4 py-3 font-bold">Details</th>
+                              <th className="px-4 py-3 font-bold text-right">Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50 text-gray-700 dark:text-slate-300">
+                            {data.records.length === 0 ? (
+                              <tr><td colSpan={5} className="p-6 text-center text-gray-400">No records to display.</td></tr>
+                            ) : data.records.map(r => (
+                              <tr key={r._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition">
+                                <td className="px-4 py-3 whitespace-nowrap">{new Date(r.date).toLocaleDateString('en-IN')}</td>
+                                <td className="px-4 py-3">{typeBadge(r.type)}</td>
+                                <td className="px-4 py-3 font-bold">{r.category}</td>
+                                <td className="px-4 py-3 max-w-[200px] truncate" title={r.description || r.personOrOrg}>
+                                  {r.description || r.personOrOrg || '—'}
+                                </td>
+                                <td className={`px-4 py-3 font-extrabold text-right ${r.type === 'Expenditure' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                  {r.type === 'Expenditure' ? '−' : '+'}₹{r.amount.toLocaleString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {/* Pagination Controls */}
+                      {data.pagination && data.pagination.pages > 1 && (
+                        <div className="flex items-center justify-between p-3 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50">
+                          <span className="text-xs text-gray-500">Page {data.pagination.page} of {data.pagination.pages}</span>
+                          <div className="flex gap-1">
+                            <button onClick={() => fetchRecords(data.pagination.page - 1)} disabled={data.pagination.page <= 1}
+                              className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 disabled:opacity-30 transition">
+                              <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => fetchRecords(data.pagination.page + 1)} disabled={data.pagination.page >= data.pagination.pages}
+                              className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 disabled:opacity-30 transition">
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-2 text-center">Note: Identifying information may be hidden for privacy.</p>
                   </div>
                 </div>
               )}

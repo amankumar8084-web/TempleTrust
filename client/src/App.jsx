@@ -30,6 +30,7 @@ const VolunteersManager = lazy(() => import('./pages/admin/VolunteersManager.jsx
 const MembershipsManager = lazy(() => import('./pages/admin/MembershipsManager.jsx'));
 const UsersManager = lazy(() => import('./pages/admin/UsersManager.jsx'));
 const BookingsManager = lazy(() => import('./pages/admin/BookingsManager.jsx'));
+const FinancialsManager = lazy(() => import('./pages/admin/FinancialsManager.jsx'));
 
 // ─── Route Guards ─────────────────────────────────────────────────────────────
 const ADMIN_ROLES = ['Admin', 'Super Admin', 'Staff', 'Trustee'];
@@ -87,6 +88,7 @@ const App = () => {
           <Route path="/admin/memberships" element={<RequireAdmin><MembershipsManager /></RequireAdmin>} />
           <Route path="/admin/users" element={<RequireAdmin><UsersManager /></RequireAdmin>} />
           <Route path="/admin/bookings" element={<RequireAdmin><BookingsManager /></RequireAdmin>} />
+          <Route path="/admin/financials" element={<RequireAdmin><FinancialsManager /></RequireAdmin>} />
 
           {/* ── 404 Fallback ──────────────────────────────────────────── */}
           <Route path="*" element={
