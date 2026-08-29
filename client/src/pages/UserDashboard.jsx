@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { User, TrendingUp, Settings, Edit2, Mail, Phone, Calendar, Shield, Clock, ImageIcon, Bell, Download, ChevronLeft, ChevronRight, IndianRupee } from 'lucide-react';
+import { User, TrendingUp, Settings, Edit2, Mail, Phone, Calendar, Shield, Clock, ImageIcon, Bell, Download, ChevronLeft, ChevronRight, IndianRupee, ZoomIn, Paperclip, X } from 'lucide-react';
 import { API_BASE_URL } from '../services/api.js';
 import Skeleton from '../components/common/Skeleton.jsx';
 import ProfilePictureManager from '../components/profile/ProfilePictureManager.jsx';
 import ProfileEditModal from '../components/profile/ProfileEditModal.jsx';
 import { updateProfileSuccess } from '../features/auth/authSlice.js';
-import { usePublicFinancials, useUserProfile } from '../hooks/queries/useQueries.js';
+import { usePublicFinancials, usePublicFinancialSummary, useUserProfile } from '../hooks/queries/useQueries.js';
 
 const UserDashboard = () => {
   const dispatch = useDispatch();
@@ -26,9 +26,12 @@ const UserDashboard = () => {
   } = usePublicFinancials({ page: finPage, limit: 10 });
 
   const loading = profileLoading || (finLoading && finPage === 1);
+
+  const { data: finSummary } = usePublicFinancialSummary();
+
   const data = {
-    financials: finData?.summary || null,
-    records: finData?.records || [],
+    financials: finSummary || null,
+    records: finData?.data || [],
     pagination: finData?.pagination || null
   };
 
@@ -57,14 +60,19 @@ const UserDashboard = () => {
     ? new Date(user.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long' })
     : 'N/A';
 
+  const [lightbox, setLightbox] = useState(null);
+
   const typeBadge = (type) => {
     const styles = {
       Donation: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
       Revenue: 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300',
       Expenditure: 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
     };
-    return <span className={`${styles[type] || ''} font-bold px-2 py-0.5 rounded-full text-[9px]`}>{type}</span>;
+    return <span className={`${styles[type] || ''} font-bold px-2 py-0.5 rounded-full text-[9px] uppercase`}>{type}</span>;
   };
+
+  const fmtINR = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`;
+  const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950 font-spiritual">
@@ -201,10 +209,11 @@ const UserDashboard = () => {
               {/* FINANCIALS */}
               {activeSection === 'finance' && (
                 <div className="space-y-6">
+                  {/* Header */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 dark:border-slate-800 pb-4">
                     <div>
                       <h2 className="text-lg font-bold text-gray-800 dark:text-white">Temple Financial Transparency</h2>
-                      <p className="text-xs text-gray-500 dark:text-slate-400">Published and verified by the Board of Trustees for devotees' verification.</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">Published and verified by the Board of Trustees. Every rupee is accounted for.</p>
                     </div>
                     <button onClick={handleExport}
                       className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition flex-shrink-0">
@@ -212,80 +221,162 @@ const UserDashboard = () => {
                     </button>
                   </div>
 
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-4 rounded-2xl">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><IndianRupee className="h-3 w-3" /> Donations</span>
-                      <div className="text-2xl mt-1 font-extrabold text-emerald-800 dark:text-emerald-300">₹{(data.financials?.totalDonations || 0).toLocaleString()}</div>
-                    </div>
-                    <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 p-4 rounded-2xl">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Revenue</span>
-                      <div className="text-2xl mt-1 font-extrabold text-blue-800 dark:text-blue-300">₹{(data.financials?.totalRevenue || 0).toLocaleString()}</div>
-                    </div>
-                    <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 p-4 rounded-2xl">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-rose-600 dark:text-rose-400 flex items-center gap-1"><TrendingUp className="h-3 w-3 rotate-180" /> Expenditure</span>
-                      <div className="text-2xl mt-1 font-extrabold text-rose-800 dark:text-rose-300">₹{(data.financials?.totalExpenditure || 0).toLocaleString()}</div>
-                    </div>
-                    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 p-4 rounded-2xl">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1"><Shield className="h-3 w-3" /> Net Balance</span>
-                      <div className="text-2xl mt-1 font-extrabold text-amber-800 dark:text-amber-300">₹{(data.financials?.netBalance || 0).toLocaleString()}</div>
-                    </div>
-                  </div>
-
-                  {/* Public Transaction Table */}
-                  <div className="mt-8">
-                    <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-3">Recent Transactions (Public View)</h3>
-                    <div className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm relative">
-                      {finFetching && <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] z-10" />}
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs text-left">
-                          <thead className="bg-gray-50 dark:bg-slate-800/50 text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                            <tr>
-                              <th className="px-4 py-3 font-bold">Date</th>
-                              <th className="px-4 py-3 font-bold">Type</th>
-                              <th className="px-4 py-3 font-bold">Category</th>
-                              <th className="px-4 py-3 font-bold">Details</th>
-                              <th className="px-4 py-3 font-bold text-right">Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50 text-gray-700 dark:text-slate-300">
-                            {data.records.length === 0 ? (
-                              <tr><td colSpan={5} className="p-6 text-center text-gray-400">No records to display.</td></tr>
-                            ) : data.records.map(r => (
-                              <tr key={r._id} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition">
-                                <td className="px-4 py-3 whitespace-nowrap">{new Date(r.date).toLocaleDateString('en-IN')}</td>
-                                <td className="px-4 py-3">{typeBadge(r.type)}</td>
-                                <td className="px-4 py-3 font-bold">{r.category}</td>
-                                <td className="px-4 py-3 max-w-[200px] truncate" title={r.description || r.personOrOrg}>
-                                  {r.description || r.personOrOrg || '—'}
-                                </td>
-                                <td className={`px-4 py-3 font-extrabold text-right ${r.type === 'Expenditure' ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                  {r.type === 'Expenditure' ? '−' : '+'}₹{r.amount.toLocaleString()}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      {/* Pagination Controls */}
-                      {data.pagination && data.pagination.pages > 1 && (
-                        <div className="flex items-center justify-between p-3 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50">
-                          <span className="text-xs text-gray-500">Page {data.pagination.page} of {data.pagination.pages}</span>
-                          <div className="flex gap-1">
-                            <button onClick={() => fetchRecords(data.pagination.page - 1)} disabled={data.pagination.page <= 1}
-                              className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 disabled:opacity-30 transition">
-                              <ChevronLeft className="h-4 w-4" />
-                            </button>
-                            <button onClick={() => fetchRecords(data.pagination.page + 1)} disabled={data.pagination.page >= data.pagination.pages}
-                              className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 disabled:opacity-30 transition">
-                              <ChevronRight className="h-4 w-4" />
-                            </button>
+                  {/* Summary Cards — richer with descriptions */}
+                  {data.financials && (() => {
+                    const total = (data.financials.totalDonations || 0) + (data.financials.totalRevenue || 0);
+                    const expPct = total > 0 ? Math.min(100, Math.round(((data.financials.totalExpenditure || 0) / total) * 100)) : 0;
+                    return (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                          <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-4 rounded-2xl space-y-1">
+                            <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400">
+                              <IndianRupee className="h-3 w-3" /> Donations
+                            </div>
+                            <div className="text-xl font-extrabold text-emerald-800 dark:text-emerald-300">{fmtINR(data.financials.totalDonations)}</div>
+                            <p className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 leading-tight">Generous offerings from devotees</p>
+                          </div>
+                          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 p-4 rounded-2xl space-y-1">
+                            <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-blue-600 dark:text-blue-400">
+                              <TrendingUp className="h-3 w-3" /> Revenue
+                            </div>
+                            <div className="text-xl font-extrabold text-blue-800 dark:text-blue-300">{fmtINR(data.financials.totalRevenue)}</div>
+                            <p className="text-[10px] text-blue-600/70 dark:text-blue-400/70 leading-tight">Services, events & activities</p>
+                          </div>
+                          <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 p-4 rounded-2xl space-y-1">
+                            <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-rose-600 dark:text-rose-400">
+                              <TrendingUp className="h-3 w-3 rotate-180" /> Expenditure
+                            </div>
+                            <div className="text-xl font-extrabold text-rose-800 dark:text-rose-300">{fmtINR(data.financials.totalExpenditure)}</div>
+                            <p className="text-[10px] text-rose-600/70 dark:text-rose-400/70 leading-tight">Annadanam, upkeep & programs</p>
+                          </div>
+                          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 p-4 rounded-2xl space-y-1">
+                            <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-amber-600 dark:text-amber-400">
+                              <Shield className="h-3 w-3" /> Net Balance
+                            </div>
+                            <div className="text-xl font-extrabold text-amber-800 dark:text-amber-300">{fmtINR(data.financials.netBalance)}</div>
+                            <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 leading-tight">Funds available for temple activities</p>
                           </div>
                         </div>
-                      )}
+
+                        {/* Fund Utilisation bar */}
+                        {total > 0 && (
+                          <div className="bg-gray-50 dark:bg-slate-800/60 rounded-2xl p-4 space-y-2">
+                            <div className="flex justify-between items-center">
+                              <p className="text-xs font-bold text-gray-700 dark:text-slate-200">Fund Utilisation</p>
+                              <p className="text-[10px] text-gray-500">{expPct}% of income spent</p>
+                            </div>
+                            <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-rose-500 transition-all"
+                                style={{ width: `${expPct}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-[10px] text-gray-400">
+                              <span>Total Income: {fmtINR(total)}</span>
+                              <span>Spent: {fmtINR(data.financials.totalExpenditure)}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Transaction Cards */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-bold text-gray-800 dark:text-white">Recent Transactions</h3>
+                      {data.pagination && <span className="text-[10px] text-gray-400">{data.pagination.total} total</span>}
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-2 text-center">Note: Identifying information may be hidden for privacy.</p>
+
+                    <div className="relative space-y-2.5">
+                      {finFetching && <div className="absolute inset-0 bg-white/50 dark:bg-slate-900/50 backdrop-blur-[1px] z-10 rounded-2xl" />}
+
+                      {data.records.length === 0 ? (
+                        <div className="text-center py-12 text-gray-400 bg-gray-50 dark:bg-slate-800/40 rounded-2xl">
+                          <IndianRupee className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                          <p className="text-sm">No transactions to display.</p>
+                        </div>
+                      ) : data.records.map(r => (
+                        <div key={r._id} className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow">
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
+                                {typeBadge(r.type)}
+                                <span className="text-[9px] text-gray-400">{fmtDate(r.date)}</span>
+                                {r.attachments?.length > 0 && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-bold">
+                                    <Paperclip className="h-2.5 w-2.5" />{r.attachments.length} bill
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm font-bold text-gray-800 dark:text-white">{r.category}</p>
+                              {(r.description || r.personOrOrg || r.expenseDetails) && (
+                                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                                  {r.expenseDetails || r.description || r.personOrOrg}
+                                </p>
+                              )}
+                              {r.paymentMethod && (
+                                <span className="inline-block mt-1.5 text-[9px] bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-gray-500 dark:text-slate-400">{r.paymentMethod}</span>
+                              )}
+                              {/* Bill image thumbnails */}
+                              {r.attachments?.length > 0 && (
+                                <div className="flex gap-1.5 mt-2 flex-wrap">
+                                  {r.attachments.slice(0, 3).map(att => (
+                                    <button key={att._id} onClick={() => setLightbox(att.url)}
+                                      className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-200 dark:border-slate-700 hover:scale-105 transition-transform group">
+                                      <img src={att.url} alt={att.caption || 'bill'} className="w-full h-full object-cover" />
+                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <ZoomIn className="h-3 w-3 text-white" />
+                                      </div>
+                                    </button>
+                                  ))}
+                                  {r.attachments.length > 3 && (
+                                    <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-[9px] font-bold text-gray-500">
+                                      +{r.attachments.length - 3}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right shrink-0">
+                              <p className={`text-base font-extrabold ${r.type === 'Expenditure' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                                {r.type === 'Expenditure' ? '−' : '+'}₹{r.amount.toLocaleString('en-IN')}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {data.pagination && data.pagination.pages > 1 && (
+                      <div className="flex items-center justify-between mt-4">
+                        <span className="text-xs text-gray-500">Page {data.pagination.page} of {data.pagination.pages}</span>
+                        <div className="flex gap-1">
+                          <button onClick={() => fetchRecords(data.pagination.page - 1)} disabled={data.pagination.page <= 1}
+                            className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 disabled:opacity-30 transition hover:bg-gray-50">
+                            <ChevronLeft className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => fetchRecords(data.pagination.page + 1)} disabled={data.pagination.page >= data.pagination.pages}
+                            className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 disabled:opacity-30 transition hover:bg-gray-50">
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-[10px] text-gray-400 mt-3 text-center">Note: Identifying information may be omitted for privacy. Records verified by the Board of Trustees.</p>
                   </div>
+
+                  {/* Lightbox */}
+                  {lightbox && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setLightbox(null)}>
+                      <img src={lightbox} alt="Bill" className="max-h-[90vh] max-w-[90vw] rounded-2xl shadow-2xl object-contain" onClick={e => e.stopPropagation()} />
+                      <button onClick={() => setLightbox(null)} className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-xl text-white">
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 

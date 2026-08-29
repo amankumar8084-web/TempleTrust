@@ -1,5 +1,25 @@
 import mongoose from 'mongoose';
 
+const attachmentSchema = new mongoose.Schema({
+    url: {
+        type: String,
+        required: true
+    },
+    publicId: {
+        type: String,
+        required: true
+    },
+    caption: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    uploadedAt: {
+        type: Date,
+        default: Date.now
+    }
+}, { _id: true });
+
 const financialRecordSchema = new mongoose.Schema({
     type: {
         type: String,
@@ -41,6 +61,21 @@ const financialRecordSchema = new mongoose.Schema({
         trim: true,
         default: ''
     },
+    expenseDetails: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    receiptUrl: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    // Bill / receipt image attachments (CRUD via dedicated endpoints)
+    attachments: {
+        type: [attachmentSchema],
+        default: []
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
@@ -57,3 +92,4 @@ financialRecordSchema.index({ date: -1 });
 
 const FinancialRecord = mongoose.model('FinancialRecord', financialRecordSchema);
 export default FinancialRecord;
+

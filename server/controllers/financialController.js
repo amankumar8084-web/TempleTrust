@@ -1,6 +1,8 @@
 import FinancialRecord from '../models/FinancialRecord.js';
 import { exportFinancialRecordsToExcel } from '../services/financialExcelService.js';
 import { BadRequestError, NotFoundError } from '../utils/customErrors.js';
+import { uploadToCloudinary } from '../config/cloudinary.js';
+import cloudinary from '../config/cloudinary.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: Build filter query from request query params
@@ -694,6 +696,97 @@ export const exportPublicFinancialRecords = async (
         );
 
         res.send(buffer);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN: Upload a bill image attachment to a financial record
+// POST /financials/:id/attachments  (multipart/form-data, field: attachment)
+// ─────────────────────────────────────────────────────────────────────────────
+export const uploadFinancialAttachment = async (req, res, next) => {
+    try {
+        const record = await FinancialRecord.findById(req.params.id);
+
+        if (!record) {
+            return next(new NotFoundError('Financial record not found.'));
+        }
+
+        if (!req.file) {
+            return next(new BadRequestError('No file uploaded.'));
+        }
+
+        // Upload buffer to Cloudinary
+        const result = await uploadToCloudinary(
+            req.file.buffer,
+            'temple/financials'
+        );
+
+        const caption = req.body.caption?.trim() || '';
+
+        record.attachments.push({
+            url: result.secure_url,
+            publicId: result.public_id,
+            caption,
+            uploadedAt: new Date()
+        });
+
+        record.updatedBy = req.user._id;
+        await record.save();
+
+        res.status(201).json({
+            status: 'success',
+            data: record.attachments[record.attachments.length - 1]
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN: Delete a bill image attachment from a financial record
+// DELETE /financials/:id/attachments/:attachmentId
+// ─────────────────────────────────────────────────────────────────────────────
+export const deleteFinancialAttachment = async (req, res, next) => {
+    try {
+        const record = await FinancialRecord.findById(req.params.id);
+
+        if (!record) {
+            return next(new NotFoundError('Financial record not found.'));
+        }
+
+        const attachment = record.attachments.id(req.params.attachmentId);
+
+        if (!attachment) {
+            return next(new NotFoundError('Attachment not found.'));
+        }
+
+        // Delete from Cloudinary (skip for mock public_ids)
+        if (
+            attachment.publicId &&
+            !attachment.publicId.startsWith('mock_public_id_')
+        ) {
+            try {
+                await cloudinary.uploader.destroy(attachment.publicId);
+            } catch (cloudErr) {
+                // Log but don't block deletion from DB
+                console.error('Cloudinary delete failed:', cloudErr);
+            }
+        }
+
+        attachment.deleteOne();
+        record.updatedBy = req.user._id;
+        await record.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Attachment deleted successfully.'
+        });
 
     } catch (error) {
         next(error);
